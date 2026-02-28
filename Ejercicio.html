@@ -16,23 +16,80 @@
   <form>
     <div class="form-group">
       <label for="usr">Nombre de usuario de github:</label>
-      <input type="text" class="form-control" id="usr">
+      <input type="text" class="form-control" id="usr" placeholder="Ej: facebook">
     </div>
   </form>
-  <table class="table">
-    <thead>
 
+  <table class="table table-striped mt-3">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Descripción</th>
+        <th>Lenguaje</th>
+        <th>Estrellas</th>
+        <th>Forks</th>
+    </tr>
     </thead>
+    <tbody id="tabla-repos">
+
+    </tbody>
   </table>
-  <input type="button" class="btn btn-primary" value="Buscar Repositorios" id = "btnBuscar">
+  
+  <div id="error-message" style="display: none;" class="alert alert-danger mt-3"></div>
+  
+  <input type="button" class="btn btn-primary" value="Buscar Repositorios" id="btnBuscar">
 </div>
 
 <script>
 $(document).ready(function(){
-  $(btnBuscar).click(function(){
-    let usuario = $("#usr").val();
+  $("#btnBuscar").click(function(){
+    let usuario = $("#usr").val().trim();
     
+    // Validar que se haya ingresado un usuario
+    if (usuario === "") {
+      mostrarError("Escribe un nombre de GitHub.");
+      return;
+    }
+    //Quitar lo que se ve de un error
+    $("#error-message").hide();
+    
+    // Hacer la petición a la API de GitHub con ajax
+    $.ajax({
+      url: "https://api.github.com/users/" + usuario + "/repos",
+      method: "GET",
+      dataType: "json",
+      success: function(data) {
+        
+        
+        data.forEach(function(repo) {
+          let fila = `
+            <tr>
+              <td>${repo.name}</td>
+              <td>${repo.description || 'Sin descripción'}</td>
+              <td>${repo.language || 'No especificado'}</td>
+              <td>${repo.stargazers_count}</td>
+              <td>${repo.forks_count}</td>
+            </tr>
+          `;
+          $("#tabla-repos").append(fila);
+        });
+      },
+      error: function(xhr, status, error) {
+        
+        if (xhr.status === 404) {
+          mostrarError("Usuario no encontrado en GitHub");
+        } else {
+          mostrarError("Error al buscar repositorios: " + error);
+        }
+      }
+    });
   });
+  
+  // Función para mostrar mensajes de error
+  function mostrarError(mensaje) {
+    $("#error-message").text(mensaje).show();
+  }
 });
 </script>
 </body>
+</html>
